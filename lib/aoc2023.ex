@@ -23,16 +23,16 @@ defmodule Aoc2023 do
   Aoc2023.Day1 files should be put in "priv/day1/*"
 
   ## Examples
-      iex> Aoc2023.read_input_file(Aoc2023.Day1, :test)
+      iex> Aoc2023.read_input_file(Aoc2023.Day1, :test) |> Enum.into([])
       [ "1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet" ]
   """
 
-  def read_input_file(module, input_type, splitter \\ "\n") do
+  def read_input_file(module, input_type, _splitter \\ "\n") do
     :aoc_2023
     |> :code.priv_dir()
     |> Path.join(input_file_name(module, input_type))
-    |> File.read!()
-    |> String.split(splitter)
+    |> File.stream!()
+    |> Stream.map(&String.trim/1)
   end
 
   @doc """

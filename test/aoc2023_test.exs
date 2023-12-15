@@ -1,6 +1,7 @@
 defmodule Aoc2023Test do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Aoc2023
+  doctest Aoc2023.Day1
 
   test "greets the world" do
     assert Aoc2023.hello() == :world
