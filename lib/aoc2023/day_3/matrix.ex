@@ -9,7 +9,7 @@ defmodule Aoc2023.Day3.Number do
 end
 
 defmodule Aoc2023.Day3.Symbol do
-  defstruct [:x, :y]
+  defstruct [:x, :y, :value]
 end
 
 defmodule Aoc2023.Day3.Line do
@@ -122,7 +122,7 @@ defmodule Aoc2023.Day3.Matrix do
   end
 
   defp parse_symbol(%Line{} = line, symbol, idx) when is_symbol(symbol) do
-    %{line | symbols: [%Symbol{x: idx, y: line.y} | line.symbols]}
+    %{line | symbols: [%Symbol{x: idx, y: line.y, value: symbol} | line.symbols]}
   end
 
   @spec update_number_acc(number_acc(), integer(), String.t()) :: number_acc()

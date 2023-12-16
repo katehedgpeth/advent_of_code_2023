@@ -3,6 +3,7 @@ defmodule Aoc2023.Day3 do
 
   alias __MODULE__.{
     Matrix,
+    Number,
     Symbol
   }
 
@@ -54,11 +55,73 @@ defmodule Aoc2023.Day3 do
     {symbols, matrix} = Matrix.parse(input_type)
 
     symbols
-    |> Enum.reduce([], &get_adjacent_numbers(&1, matrix, &2))
+    |> Enum.reduce([], &collect_adjacent_numbers(&1, matrix, &2))
     |> Enum.reduce(0, &(&2 + &1.value))
   end
 
-  defp get_adjacent_numbers(%Symbol{x: x, y: y}, matrix, acc) do
+  @doc """
+  Part 2
+
+  ```
+  The missing part wasn't the only issue - one of the gears in the engine
+  is wrong. A gear is any * symbol that is adjacent to exactly two part
+  numbers. Its gear ratio is the result of multiplying those two numbers
+  together.
+
+  This time, you need to find the gear ratio of every gear and add them all
+  up so that the engineer can figure out which gear needs to be replaced.
+
+  What is the sum of all of the gear ratios in your engine schematic?
+  ```
+
+  Strategy:
+  Only required a slight modification from part 1. I added the symbol
+  value to the symbol accumulator, then filtered for only `*` symbols. I
+  probably could optimize the `get_adjacent_numbers` function to bail if
+  if detects more than a max #, but I didn't bother.
+
+  iex> Aoc2023.Day3.part_2(:test)
+  467835
+
+  iex> Aoc2023.Day3.part_2(:real)
+  91031374
+  """
+  def part_2(input_type) do
+    {symbols, matrix} = Matrix.parse(input_type)
+
+    symbols
+    |> Stream.filter(&(&1.value == "*"))
+    |> Stream.map(&get_adjacent_numbers(&1, matrix))
+    |> Stream.map(&calculate_gear_ratio/1)
+    |> Enum.reduce(0, &Kernel.+/2)
+  end
+
+  defp collect_adjacent_numbers(symbol, matrix, acc) do
+    symbol
+    |> get_adjacent_numbers(matrix)
+    |> Enum.into([])
+    |> Enum.concat(acc)
+  end
+
+  defp calculate_gear_ratio(%MapSet{} = set) do
+    set
+    |> Enum.into([])
+    |> calculate_gear_ratio()
+  end
+
+  defp calculate_gear_ratio([%Number{value: val_1}, %Number{value: val_2}]) do
+    val_1 * val_2
+  end
+
+  defp calculate_gear_ratio([%Number{} | _]) do
+    0
+  end
+
+  defp calculate_gear_ratio([]) do
+    0
+  end
+
+  defp get_adjacent_numbers(%Symbol{x: x, y: y}, matrix) do
     prev_row = [{x - 1, y - 1}, {x, y - 1}, {x + 1, y - 1}]
     row = [{x - 1, y}, {x + 1, y}]
     next_row = [{x - 1, y + 1}, {x, y + 1}, {x + 1, y + 1}]
@@ -66,8 +129,6 @@ defmodule Aoc2023.Day3 do
     [prev_row, row, next_row]
     |> Enum.concat()
     |> Enum.reduce(MapSet.new(), &get_adjacent_number(&1, matrix, &2))
-    |> Enum.into([])
-    |> Enum.concat(acc)
   end
 
   defp get_adjacent_number({x, y}, matrix, acc) do
