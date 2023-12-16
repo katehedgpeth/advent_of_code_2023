@@ -23,7 +23,7 @@ defmodule Aoc2023 do
   Aoc2023.Day1 files should be put in "priv/day1/*"
 
   ## Examples
-      iex> Aoc2023.read_input_file(Aoc2023.Day1, :test) |> Enum.into([])
+      iex> Aoc2023.read_input_file(Aoc2023.Day1, :part1_test) |> Enum.into([])
       [ "1abc2", "pqr3stu8vwx", "a1b2c3d4e5f", "treb7uchet" ]
   """
 
