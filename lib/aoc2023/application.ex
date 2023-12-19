@@ -10,6 +10,7 @@ defmodule Aoc2023.Application do
     children = [
       # Starts a worker by calling: Aoc2023.Worker.start_link(arg)
       # {Aoc2023.Worker, arg}
+      {Task.Supervisor, name: Aoc2023.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
