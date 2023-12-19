@@ -2,8 +2,6 @@ defmodule Aoc2023.Day5 do
   require Logger
   require Aoc2023
 
-  alias Aoc2023.Day5.State
-  alias Aoc2023.Day5.Mapper
   alias Aoc2023.Day5.Agent
 
   @moduledoc """
@@ -80,54 +78,57 @@ defmodule Aoc2023.Day5 do
 
     agent
     |> GenServer.call(:state)
-    |> get_lowest_location()
+    |> __MODULE__.Part1.get_lowest_location()
   end
 
-  defp get_lowest_location(%State{seed_ids: seed_ids} = state) do
-    seed_ids
-    |> Enum.reduce([], &map_seed_id(&1, &2, state))
-    |> Enum.reduce(nil, &_get_lowest_location/2)
+  @doc """
+  Part 2
+
+  ```
+  Re-reading the almanac, it looks like the seeds: line actually describes
+  ranges of seed numbers.  The values on the initial seeds: line come in
+  pairs. Within each pair, the first value is the start of the range and
+  the second value is the length of the range.
+
+  So, in the first line of the example above:
+
+  seeds: 79 14 55 13
+
+  This line describes two ranges of seed numbers to be planted in the garden.
+  The first range starts with seed number 79 and contains 14 values: 79,
+  80, ..., 91, 92. The second range starts with seed number 55 and contains
+  13 values: 55, 56, ..., 66, 67.
+
+  What is the lowest location number that corresponds to any of the initial
+  seed numbers?
+  ```
+
+  Strategy:
+  Ok, so this is going to have the same problem as before, there's just going
+  to be a shitload of data to crunch. It doesn't seem like there's anything we
+  can do at the beginning to rule out some seed ids, but maybe I'm wrong about
+  that.
+
+  Actually, maybe I could do a reverse search - order the location
+  numbers from lowest to highest, then map over them until I find the first
+  location ID that actually matches a seed id. I'm going to try that.
+
+  ...........
+
+  Well, my first attempt at implementing the reverse-search idea didn't work.
+  I only have the location ranges to start with, and I'm not sure that it would
+  actually save me any work to use that as a starting point. There is not a
+  guarantee that a lower seed ID corresponds to a lower location. I'm going to
+  try again and just iterate over the seed ids.
+
+  iex> Aoc2023.Day5.part_2(:test)
+  46
+  """
+  def part_2(input_type) do
+    {:ok, agent} = Agent.start_link(input_type: input_type)
+
+    agent
+    |> GenServer.call(:state)
+    |> __MODULE__.Part2.get_lowest_location()
   end
-
-  defp _get_lowest_location({_, %{location: location}}, lowest)
-       when lowest == nil or location < lowest,
-       do: location
-
-  defp _get_lowest_location({_, %{location: _}}, lowest),
-    do: lowest
-
-  def map_seed_ids(seed_ids, pid) do
-    Enum.reduce(seed_ids, [], &map_seed_id(&1, &2, pid))
-  end
-
-  defp map_seed_id(id, acc, state) do
-    mapped = do_map_seed_id(%{seed: id}, :seed, state)
-    [{id, mapped} | acc]
-  end
-
-  defp do_map_seed_id(acc, :location, %State{}) do
-    acc
-  end
-
-  defp do_map_seed_id(acc, source, %State{} = state) do
-    with {_, {{^source, destination}, maps}} <-
-           {source, Enum.find(state.mappers, &source?(&1, source))},
-         source_id <- Map.fetch!(acc, source),
-         destination_id <- Mapper.map(source_id, maps) do
-      acc
-      |> Map.put(destination, destination_id)
-      |> do_map_seed_id(destination, state)
-    else
-      {source, nil} ->
-        raise """
-        Cannot find maps for source:
-
-        source=#{source}
-
-        mappers=#{inspect(Map.keys(state.mappers))}
-        """
-    end
-  end
-
-  defp source?({{source, _dest}, _mapper}, seeking), do: source == seeking
 end

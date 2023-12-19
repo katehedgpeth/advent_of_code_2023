@@ -26,6 +26,29 @@ defmodule Aoc2023.Day5.State do
     %__MODULE__{input_type: input_type}
   end
 
+  def map_seed_id(id, %__MODULE__{} = state) do
+    _map_seed_id(%{seed: id}, :seed, state)
+  end
+
+  defp _map_seed_id(acc, :location, %__MODULE__{}) do
+    acc
+  end
+
+  defp _map_seed_id(acc, source, %__MODULE__{} = state) do
+    {{^source, destination}, maps} =
+      Enum.find(
+        state.mappers,
+        &Mapper.source?(&1, source)
+      )
+
+    source_id = Map.fetch!(acc, source)
+    destination_id = Mapper.map(source_id, maps)
+
+    acc
+    |> Map.put(destination, destination_id)
+    |> _map_seed_id(destination, state)
+  end
+
   def finished_parsing?(%__MODULE__{
         finished_parsing: %{
           categories: true,
