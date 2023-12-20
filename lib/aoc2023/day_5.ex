@@ -2,7 +2,10 @@ defmodule Aoc2023.Day5 do
   require Logger
   require Aoc2023
 
-  alias Aoc2023.Day5.Agent
+  alias Aoc2023.Day5.{
+    Agent,
+    Location
+  }
 
   @moduledoc """
   Day 5
@@ -74,7 +77,7 @@ defmodule Aoc2023.Day5 do
   """
 
   def part_1(input_type) do
-    {:ok, agent} = Agent.start_link(input_type: input_type)
+    {:ok, agent} = Agent.start_link(input_type: input_type, seed_id_type: :integer)
 
     agent
     |> GenServer.call(:state)
@@ -121,14 +124,85 @@ defmodule Aoc2023.Day5 do
   guarantee that a lower seed ID corresponds to a lower location. I'm going to
   try again and just iterate over the seed ids.
 
-  iex> Aoc2023.Day5.part_2(:test)
-  46
-  """
-  def part_2(input_type) do
-    {:ok, agent} = Agent.start_link(input_type: input_type)
+  ........... DAYS later ............
 
-    agent
-    |> GenServer.call(:state)
-    |> __MODULE__.Part2.get_lowest_location()
+  Ho-leeeee shit, this kicked my ass.  I wrote a lot of code that gave me a number,
+  but not the right number. But I finally came up with a solution that
+  runs in less than a second even on the very large real dataset.
+
+  I tried a couple solutions that searched the seed ids for the lowest location,
+  but everything I wrote took way to long to run. You can see below that at one
+  point I was worried that the real dataset had overlapping ranges somewhere, but
+  it does not.
+
+  I'm sure this folder is now littered with abandoned functions, but I'm not going
+  to bother to clean them up right now, I just want to be done with this stupid problem.
+
+  My initial instinct to start with the location IDs was correct, I believe.
+
+  Basically:
+  - We start by parsing the file, then get the full range of possible location ids.
+  - Then we step through that range by intervals until we find the first location
+    that reverse-maps to a known seed id.
+  - Then, using that id as the high end of the range, we do a binary search through
+    that smaller range to find the actual lowest location that reverse-maps to
+    a known seed id.
+
+  WHEW!
+
+  iex> Aoc2023.Day5.part_2(:test)
+  {:ok, 46}
+
+  iex> Aoc2023.Day5.part_2(:real)
+  {:ok, 100165128}
+  """
+
+  @step_size %{
+    test: 5,
+    real: 10_000
+  }
+  def part_2(input_type) do
+    {:ok, agent} = Agent.start_link(input_type: input_type, seed_id_type: :range)
+
+    Location.lowest(agent, Map.fetch!(@step_size, input_type))
+  end
+
+  @doc """
+  iex> Aoc2023.Day5.find_overlaps(:test)
+  []
+
+  """
+  def find_overlaps(input_type) do
+    {:ok, agent} = Agent.start_link(input_type: input_type, seed_id_type: :integer)
+    state = Agent.state(agent)
+
+    Enum.reduce(state.mappers, [], &_find_overlaps/2)
+  end
+
+  defp _find_overlaps({{src, dest}, mappers}, acc) do
+    mappers = Enum.map(mappers, &make_range/1)
+
+    case Enum.reduce(mappers, [], &__find_overlaps(&1, &2, mappers)) do
+      [] -> acc
+      overlaps -> [{{src, dest}, overlaps} | acc]
+    end
+  end
+
+  defp __find_overlaps(mapper, acc, mappers) do
+    Enum.reduce(mappers, acc, &save_disjoints(mapper, &1, &2))
+  end
+
+  defp make_range({{first, last}, _}) do
+    Range.new(first, last - 1)
+  end
+
+  defp save_disjoints(range1, range2, acc) when range1 == range2 do
+    acc
+  end
+
+  defp save_disjoints(range1, range2, acc) do
+    if Range.disjoint?(range1, range2),
+      do: acc,
+      else: [{range1, range2} | acc]
   end
 end

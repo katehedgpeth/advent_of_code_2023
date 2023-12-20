@@ -24,13 +24,33 @@ defmodule Aoc2023.Day5.Parser do
     |> read_file()
     |> Stream.filter(&seed_ids_line?/1)
     |> Enum.to_list()
-    |> do_parse_seed_ids()
+    |> do_parse_seed_ids(state.seed_id_type)
   end
 
-  defp do_parse_seed_ids(["seeds: " <> seed_ids]) do
+  defp do_parse_seed_ids(["seeds: " <> seed_ids], type) do
     seed_ids
     |> String.split("\s")
     |> Enum.map(&String.to_integer/1)
+    |> maybe_seed_id_range(type)
+  end
+
+  defp maybe_seed_id_range(seed_ids, :integer) do
+    seed_ids
+  end
+
+  defp maybe_seed_id_range(seed_ids, :range) do
+    seed_ids_to_ranges(seed_ids)
+  end
+
+  def seed_ids_to_ranges(seed_ids) do
+    seed_ids
+    |> Enum.chunk_every(2)
+    |> MapSet.new(&seed_id_range/1)
+    |> Enum.to_list()
+  end
+
+  defp seed_id_range([first, range]) do
+    Range.new(first, first + range - 1)
   end
 
   def start_mappers(%State{} = state) do

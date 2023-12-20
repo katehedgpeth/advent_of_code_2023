@@ -48,7 +48,7 @@ defmodule Aoc2023.Day5.Mapper do
   end
 
   def is_in_src_range({{first, last}, _}, integer) do
-    integer >= first and integer <= last
+    integer >= first and integer < last
   end
 
   def is_in_dest_range({_, %__MODULE__{diff: diff}} = mapper, integer) do

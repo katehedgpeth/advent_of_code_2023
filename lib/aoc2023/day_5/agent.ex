@@ -4,6 +4,27 @@ defmodule Aoc2023.Day5.Agent do
   alias Aoc2023.Day5.Parser
   alias Aoc2023.Day5.State
 
+  def state(pid) do
+    GenServer.call(pid, :state)
+  end
+
+  @spec prev_source(pid(), atom()) :: atom()
+  def prev_source(pid, category) do
+    GenServer.call(pid, {:prev_source, category})
+  end
+
+  def seed_ids(pid) do
+    GenServer.call(pid, :seed_ids)
+  end
+
+  def input_type(pid) do
+    GenServer.call(pid, :input_type)
+  end
+
+  def get_category_mappers!(pid, category) do
+    GenServer.call(pid, {:get_mappers_for_category!, category})
+  end
+
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts)
   end
@@ -69,6 +90,33 @@ defmodule Aoc2023.Day5.Agent do
       {:noreply, State.set_parent(state, from)}
     end
   end
+
+  def handle_call(:input_type, _from, state) do
+    {:reply, state.input_type, state}
+  end
+
+  def handle_call(:seed_ids, _from, state) do
+    {:reply, state.seed_ids, state}
+  end
+
+  def handle_call({:prev_source, category}, _from, %State{} = state) do
+    {{src, _}, _} = get_mappers_for_category!(category, state.mappers)
+    {:reply, src, state}
+  end
+
+  def handle_call({:get_mappers_for_category!, category}, _from, %State{} = state) do
+    {:reply, get_mappers_for_category!(category, state.mappers), state}
+  end
+
+  defp get_mappers_for_category!(category, mappers) do
+    case Enum.find(mappers, &match_category?(&1, category)) do
+      nil -> raise "Cannot find mappers for category #{category}"
+      match -> match
+    end
+  end
+
+  defp match_category?({{:seed, _}, _}, :seed), do: true
+  defp match_category?({{_, dest}, _}, category), do: dest == category
 
   def set(pid, key, val) do
     Agent.update(pid, &Map.put(&1, key, val))

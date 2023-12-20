@@ -7,6 +7,7 @@ defmodule Aoc2023.Day5.State do
             parent: nil,
             remaining_mappers: [],
             seed_ids: [],
+            seed_id_type: :integer,
             finished_parsing: %{
               categories: false,
               mappers: false,
@@ -22,8 +23,9 @@ defmodule Aoc2023.Day5.State do
               {:humidity, :location} => MapSet.new()
             }
 
-  def new(input_type: input_type) do
-    %__MODULE__{input_type: input_type}
+  def new(input_type: input_type, seed_id_type: seed_id_type)
+      when seed_id_type in [:integer, :range] and input_type in [:test, :real] do
+    %__MODULE__{input_type: input_type, seed_id_type: seed_id_type}
   end
 
   def map_seed_id(id, %__MODULE__{} = state) do
