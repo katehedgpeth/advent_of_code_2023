@@ -24,27 +24,37 @@ defmodule Aoc2023.Day7 do
     |> Enum.reduce(0, &Kernel.+/2)
   end
 
-  def parse_hands(input_type) do
+  @doc """
+  Part 2
+
+  This time, Js are jokers. They can change the hand type, but
+  their actual value is always low.
+
+  iex> Aoc2023.Day7.part_2(:test)
+  5905
+
+  iex> Aoc2023.Day7.part_2(:real)
+  253499763
+  """
+  def part_2(input_type) do
+    input_type
+    |> parse_hands(true)
+    |> rank_cards()
+    |> Enum.map(&calculate_score/1)
+    |> Enum.reduce(0, &Kernel.+/2)
+  end
+
+  def parse_hands(input_type, jokers_wild? \\ false) do
     __MODULE__
     |> Aoc2023.read_input_file(input_type)
-    |> Stream.map(&Parser.parse_hand/1)
+    |> Stream.map(&Parser.parse_hand(&1, jokers_wild?))
   end
 
   def rank_cards(stream) do
     stream
-    |> Enum.group_by(&Hand.rank(&1.type))
-    |> Enum.sort_by(&elem(&1, 0))
-    |> Enum.flat_map(&sort_by_card_value/1)
+    |> Enum.sort(&sort_cards/2)
     |> Enum.with_index(1)
     |> Enum.map(&add_rank/1)
-  end
-
-  defp sort_by_card_value({_, cards}) do
-    Enum.sort(cards, &card_sorter/2)
-  end
-
-  defp card_sorter(%{hand: hand1}, %{hand: hand2}) do
-    Hand.higher_hand(hand1, hand2)
   end
 
   defp calculate_score(%{} = card) do
@@ -52,4 +62,12 @@ defmodule Aoc2023.Day7 do
   end
 
   defp add_rank({card, rank}), do: Map.put(card, :rank, rank)
+
+  defp sort_cards(%{type: type, value: value1}, %{type: type, value: value2}) do
+    value1 < value2
+  end
+
+  defp sort_cards(%{type: type1}, %{type: type2}) do
+    Hand.rank(type1) < Hand.rank(type2)
+  end
 end
