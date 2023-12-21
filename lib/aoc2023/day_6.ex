@@ -38,8 +38,38 @@ defmodule Aoc2023.Day6 do
   """
   def part_1(input_type) do
     input_type
-    |> Parser.parse_file()
-    |> Enum.map(&WaysOfWinning.calculate/1)
+    |> Parser.parse_file(:part_1)
+    |> Enum.map(&WaysOfWinning.calculate(&1, :brute_force))
+    |> Enum.reduce(1, &Kernel.*/2)
+  end
+
+  @doc """
+  Part 2
+
+  ```
+  As the race is about to start, you realize the piece of paper with race times
+  and record distances you got earlier actually just has very bad kerning. There's
+  really only one race - ignore the spaces between the numbers on each line.
+  ```
+
+  As expected. I wound up needing to also use binary search on both the high and low
+  search to find the range without timing out. I refactored the BinarySearch module
+  from the previous day and made it univerally available, since I'm sure I'm going
+  to need it again.
+
+  Even though Day 5 was very painful, I clearly learned something from that pain!
+
+  iex> Aoc2023.Day6.part_2(:test)
+  71503
+
+  iex> Aoc2023.Day6.part_2(:real)
+  42515755
+  """
+
+  def part_2(input_type) do
+    input_type
+    |> Parser.parse_file(:part_2)
+    |> Enum.map(&WaysOfWinning.calculate(&1, :optimized))
     |> Enum.reduce(1, &Kernel.*/2)
   end
 end
