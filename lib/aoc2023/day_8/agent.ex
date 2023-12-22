@@ -13,15 +13,19 @@ defmodule Aoc2023.Day8.Agent do
         }
 
   def start_link(opts) do
-    Agent.start_link(fn -> init(opts) end, name: __MODULE__)
+    Agent.start_link(fn -> init(opts) end)
   end
 
-  def get_instruction(idx) do
-    Agent.get(__MODULE__, &_get_instruction(&1, idx))
+  def get_A_keys(agent) do
+    Agent.get(agent, &_get_A_keys/1)
   end
 
-  def get_node("" <> name) do
-    Agent.get(__MODULE__, &_get_node(&1, name))
+  def get_instruction(agent, idx) do
+    Agent.get(agent, &_get_instruction(&1, idx))
+  end
+
+  def get_node(agent, "" <> key) do
+    Agent.get(agent, &_get_node(&1, key))
   end
 
   defp _get_node(%{nodes: nodes}, name), do: Map.fetch!(nodes, name)
@@ -36,6 +40,12 @@ defmodule Aoc2023.Day8.Agent do
       nil -> raise "no value exists at index #{idx} in #{inspect(instructions)}"
       instr -> {instr, idx + 1}
     end
+  end
+
+  defp _get_A_keys(%{nodes: nodes}) do
+    nodes
+    |> Map.keys()
+    |> Enum.filter(&(String.at(&1, 2) == "A"))
   end
 
   defp init(input_type: input_type) do

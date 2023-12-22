@@ -26,18 +26,61 @@ defmodule Aoc2023.Day8 do
 
   """
   def part_1(input_type) do
-    {:ok, _agent} = Agent.start_link(input_type: input_type)
+    {:ok, agent} = Agent.start_link(input_type: input_type)
 
-    {"AAA", 0}
-    |> Stream.iterate(&get_next_node/1)
-    |> Enum.take_while(fn {val, _} -> val != "ZZZ" end)
+    get_steps_count("AAA", agent, fn {val, _} -> val != "ZZZ" end)
+  end
+
+  @doc """
+  The instructions have changed - we want to simultaneously start at any node that
+  ends in A, and follow the instructions until they all simultaneously land on a
+  node that ends in Z.
+
+  I suppose I cheated a bit by not actually writing the algorithm to find the least
+  common multiple.
+
+  iex> Aoc2023.Day8.part_2(:test3)
+  6
+
+  iex> Aoc2023.Day8.part_2(:real)
+  12315788159977
+  """
+  def part_2(input_type) do
+    {:ok, agent} = Agent.start_link(input_type: input_type)
+    get_lcm(agent)
+  end
+
+  defp get_lcm(agent) do
+    agent
+    |> Agent.get_A_keys()
+    |> Enum.map(fn key -> get_steps_count(key, agent, &doesnt_end_in_z?/1) end)
+    |> Enum.reduce(nil, &_get_lcm/2)
+  end
+
+  defp doesnt_end_in_z?({<<_::binary-size(1), _::binary-size(1), "Z">>, _}), do: false
+
+  defp doesnt_end_in_z?({<<_::binary-size(1), _::binary-size(1), _::binary-size(1)>>, _}),
+    do: true
+
+  defp _get_lcm(left, nil) do
+    left
+  end
+
+  defp _get_lcm(left, right) when is_integer(right) do
+    Math.lcm(left, right)
+  end
+
+  def get_steps_count(start, agent, cont_fn) do
+    {start, 0}
+    |> Stream.iterate(&get_next_node(&1, agent))
+    |> Enum.take_while(cont_fn)
     |> Enum.count()
   end
 
-  defp get_next_node({key, idx}) do
-    {left, right} = Agent.get_node(key)
+  defp get_next_node({key, idx}, agent) when is_binary(key) do
+    {left, right} = Agent.get_node(agent, key)
 
-    case Agent.get_instruction(idx) do
+    case Agent.get_instruction(agent, idx) do
       {:L, next_idx} -> {left, next_idx}
       {:R, next_idx} -> {right, next_idx}
     end
